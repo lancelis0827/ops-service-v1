@@ -1,25 +1,29 @@
-name: Stage 2 CD Pipeline
+name: Stage 2 CI/CD Pipeline
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
+  test-code:
+    name: Run Unit Tests (CI)
+    runs-on: self-hosted
+    steps:
+      - name: Run Pytest
+        run: |
+          cd ~/repos/ops-service-v1
+          source venv/bin/activate
+          pytest tests/
+
   deploy-to-server:
-    name: Pull Code and Restart
+    name: Deploy to Production (CD)
+    needs: test-code  # <--- THIS IS THE MAGIC! It waits for the tests to pass!
     runs-on: self-hosted
     steps:
       - name: Execute Deployment Commands
         run: |
-          # 1. Go to the live server folder
           cd ~/repos/ops-service-v1
-          
-          # 2. Pull the latest code from GitHub
           git pull origin main
-          
-          # 3. Update dependencies (just in case we added new ones)
           source venv/bin/activate
           pip install -r requirements.txt
-          
-          # 4. Restart the background service to apply changes
           sudo systemctl restart ops-service-v1
