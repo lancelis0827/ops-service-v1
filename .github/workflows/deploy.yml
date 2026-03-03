@@ -13,7 +13,7 @@ jobs:
         run: |
           cd ~/repos/ops-service-v1
           source venv/bin/activate
-          pytest tests/
+          python -m pytest tests/
 
   deploy-to-server:
     name: Deploy to Production (CD)
