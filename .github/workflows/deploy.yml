@@ -1,4 +1,4 @@
-name: Stage 2 CI/CD Pipeline
+name: Stage 3 Docker CI/CD Pipeline
 
 on:
   push:
@@ -9,21 +9,24 @@ jobs:
     name: Run Unit Tests (CI)
     runs-on: self-hosted
     steps:
-      - name: Run Pytest
+      - name: Test Inside Container
         run: |
           cd ~/repos/ops-service-v1
-          source venv/bin/activate
-          python -m pytest tests/
+          # Build a temporary image to test against
+          docker build -t test-image .
+          # Run pytest inside the isolated container, then delete the container (--rm)
+          docker run --rm test-image python -m pytest tests/
 
   deploy-to-server:
     name: Deploy to Production (CD)
-    needs: test-code  # <--- THIS IS THE MAGIC! It waits for the tests to pass!
+    needs: test-code
     runs-on: self-hosted
     steps:
-      - name: Execute Deployment Commands
+      - name: Execute Docker Compose
         run: |
           cd ~/repos/ops-service-v1
           git pull origin main
-          source venv/bin/activate
-          pip install -r requirements.txt
-          sudo systemctl restart ops-service-v1
+          # The single command that replaces venv, pip install, and systemctl
+          docker compose up -d --build
+          # Clean up old unused, dangling images to save disk space
+          docker image prune -f
